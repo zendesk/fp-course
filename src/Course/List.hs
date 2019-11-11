@@ -36,6 +36,8 @@ data List t =
   | t :. List t
   deriving (Eq, Ord)
 
+-- (1 :. 2 :. 3 :. 4 :. Nil)
+
 -- Right-associative
 infixr 5 :.
 
@@ -75,8 +77,8 @@ headOr ::
   a
   -> List a
   -> a
-headOr =
-  error "todo: Course.List#headOr"
+headOr x Nil = x
+headOr _ (h :. _) = h
 
 -- | The product of the elements of a list.
 --
@@ -91,8 +93,9 @@ headOr =
 product ::
   List Int
   -> Int
-product =
-  error "todo: Course.List#product"
+product Nil = 1
+product (h :. t) = h * product (t)
+  
 
 -- | Sum the elements of the list.
 --
@@ -106,8 +109,7 @@ product =
 sum ::
   List Int
   -> Int
-sum =
-  error "todo: Course.List#sum"
+sum x = foldLeft (+) 0 x
 
 -- | Return the length of the list.
 --
@@ -118,8 +120,8 @@ sum =
 length ::
   List a
   -> Int
-length =
-  error "todo: Course.List#length"
+length Nil = 0
+length (_ :. t) = 1 + length (t)
 
 -- | Map the given function on each element of the list.
 --
@@ -133,8 +135,9 @@ map ::
   (a -> b)
   -> List a
   -> List b
-map =
-  error "todo: Course.List#map"
+map f Nil = Nil
+map f (h :. t)  = f h :. (map f t)
+
 
 -- | Return elements satisfying the given predicate.
 --
@@ -150,8 +153,10 @@ filter ::
   (a -> Bool)
   -> List a
   -> List a
-filter =
-  error "todo: Course.List#filter"
+
+filter _ Nil = Nil
+filter f (h :. t) = if f h then h :. (filter f t) else (filter f t)
+  
 
 -- | Append two lists to a new list.
 --
@@ -169,8 +174,10 @@ filter =
   List a
   -> List a
   -> List a
-(++) =
-  error "todo: Course.List#(++)"
+(++) Nil Nil = Nil
+(++) Nil l = l
+(++) l Nil = l
+(++) (h:.t) l = h :. (t ++ l)
 
 infixr 5 ++
 
@@ -187,8 +194,12 @@ infixr 5 ++
 flatten ::
   List (List a)
   -> List a
-flatten =
-  error "todo: Course.List#flatten"
+flatten Nil = Nil
+flatten (h:.t) = h ++ flatten t
+
+-- h :: List a
+-- t :: List (List a)
+-- _ :: List a
 
 -- | Map a function then flatten to a list.
 --
@@ -204,8 +215,9 @@ flatMap ::
   (a -> List b)
   -> List a
   -> List b
-flatMap =
-  error "todo: Course.List#flatMap"
+-- flatMap _ Nil = Nil 
+-- flatMap f (h :. t) = f h ++ flatMap f t 
+flatMap f l = flatten (map f l)
 
 -- | Flatten a list of lists to a list (again).
 -- HOWEVER, this time use the /flatMap/ function that you just wrote.
@@ -214,36 +226,42 @@ flatMap =
 flattenAgain ::
   List (List a)
   -> List a
-flattenAgain =
-  error "todo: Course.List#flattenAgain"
+flattenAgain x = flatMap (\y -> y) x
 
 -- | Convert a list of optional values to an optional list of values.
---
+
 -- * If the list contains all `Full` values,
 -- then return `Full` list of values.
---
+
 -- * If the list contains one or more `Empty` values,
 -- then return `Empty`.
---
+
 -- * The only time `Empty` is returned is
 -- when the list contains one or more `Empty` values.
---
+
 -- >>> seqOptional (Full 1 :. Full 10 :. Nil)
 -- Full [1,10]
---
+
 -- >>> seqOptional Nil
 -- Full []
---
+
 -- >>> seqOptional (Full 1 :. Full 10 :. Empty :. Nil)
 -- Empty
---
+
 -- >>> seqOptional (Empty :. map Full infinity)
 -- Empty
 seqOptional ::
   List (Optional a)
   -> Optional (List a)
-seqOptional =
-  error "todo: Course.List#seqOptional"
+seqOptional Nil = Full Nil
+seqOptional (h:.t) = bindOptional (\la -> mapOptional (optional (\a -> a:.la) Nil) (Full h)) (seqOptional t)
+  
+-- Alternate solution
+-- ==================
+-- seqOptional Nil = Full Nil
+-- seqOptional (h:.t) = case h of 
+--   Empty -> Empty
+--   Full a -> Full (a :. (optional (\b -> b) Nil (seqOptional t))) 
 
 -- | Find the first element in the list matching the predicate.
 --
